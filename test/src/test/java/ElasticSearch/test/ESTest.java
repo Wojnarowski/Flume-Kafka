@@ -1,17 +1,18 @@
 package ElasticSearch.test;
 
-import java.io.IOException;
-
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-
 import io.searchbox.client.JestResult;
 import io.searchbox.client.http.JestHttpClient;
+import io.searchbox.core.Bulk;
 import io.searchbox.core.Get;
 import io.searchbox.core.Index;
 import io.searchbox.core.Search;
 import io.searchbox.indices.CreateIndex;
 import io.searchbox.indices.DeleteIndex;
+
+import java.io.IOException;
+
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 public class ESTest {
 
@@ -99,5 +100,35 @@ public class ESTest {
         // query
         String query = "fox";
         t.search(query);
+    }
+    
+    public void indexBulk(String indexName) {
+        try {
+            // drop
+            DeleteIndex dIndex = new DeleteIndex(new DeleteIndex.Builder(
+                    indexName));
+            client.execute(dIndex);
+            // create
+            CreateIndex cIndex = new CreateIndex(new CreateIndex.Builder(
+                    indexName));
+            client.execute(cIndex);
+            // add doc
+            Bulk.Builder bulkBuilder = new Bulk.Builder();
+            for (int i = 0; i < 1000; i++) {
+ 
+                User user = new User();
+                user.setId(new Long(i));
+                user.setName("huang fox " + i);
+                user.setAge(i % 100);
+                Index index = new Index.Builder(user).index(indexName)
+                        .type(indexName).build();
+                bulkBuilder.addAction(index);
+            }
+            client.execute(bulkBuilder.build());
+            //
+            client.shutdownClient();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
